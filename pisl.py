@@ -33,8 +33,10 @@ def print_out(left_text='', right_text='', term=None):
         l_len = len(left_text)
         r_len = len(right_text)
         if l_len + r_len >= term.width:
-            left_text = left_text[:(term.width-r_len)]
-        term.puts(left_text + ' ' + right_text + '\n')
+            left_text = left_text[:(term.width - r_len)]
+        else:
+            right_text = ' ' * (term.width - l_len - r_len) + right_text
+        term.puts(left_text + right_text + '\n')
 
 def get_departures():
 
@@ -71,7 +73,7 @@ def main():
     last_get_deps = None
     departures = None
     while True:
-        ter.clear()
+        term.clear()
         if departures is None or time_diff(last_get_deps) > refresh_freq:
 
             try:
@@ -144,7 +146,7 @@ def main():
                     temp.append(est_min)
                     break # temp only 1
 
-                print_out('{}'.format(dest), '{}'.format(','.join(temp)), term=term)
+                print_out(u'{}'.format(dest), '{}'.format(','.join(temp)), term=term)
                 break # temp only 1
         time.sleep(screen_refresh_freq)
     term.flush()

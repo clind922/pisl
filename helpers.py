@@ -6,6 +6,8 @@
 from PIL import ImageFont
 
 import os.path
+import datetime
+import time
 
 def make_font(name, size):
     font_path = os.path.abspath(os.path.join(
