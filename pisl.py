@@ -27,9 +27,10 @@ size = 15 # Font size
 term = None
 
 def print_out(left_text='', right_text='', term=None):
-    if(term is None)
+    if term is None:
         print(left_text + ' ' + right_text)
-    term.puts(left_text + ' ' + right_text)
+    else:
+        term.puts(left_text + ' ' + right_text + '\n')
 
 def time_diff(dt, absVal=True):
     if type(dt) != datetime.datetime:
@@ -40,15 +41,6 @@ def time_diff(dt, absVal=True):
     if absVal:
         diff = abs(diff)
     return int(diff)
-
-def clean_text(text):
-    text = text.replace('å', 'å')
-    text = text.replace('Å', 'A')
-    text = text.replace('ä', 'a')
-    text = text.replace('Ä', 'A')
-    text = text.replace('ö', 'o')
-    text = text.replace('Ö', 'O')
-    return text
 
 def get_departures():
 
@@ -110,7 +102,7 @@ def main():
                 diff = time_diff(dep['ExpectedDateTime'], absVal=False)
                 if diff < 0:
                     continue
-                est_min = math.floor(diff/60)
+                est_min = int(math.floor(diff/60))
                 if est_min == 0:
                     est_min = 'Nu'
                 else:
@@ -121,11 +113,13 @@ def main():
                     if preferred_num_printed == 3:
                         continue
                     #print_out(' {} {} {} [{}s ({} min)]'.format(dep['LineNumber'], dep['Destination'], dep['DisplayTime'], diff, est_min), term=term)
-                    print_out('{} {}'.format(dep['LineNumber'], clean_text(dep['Destination'])), '{}'.format(est_min), term=term)
+                    print_out(u'{} {}'.format(dep['LineNumber'], dep['Destination']).encode('utf-8'), '{}'.format(est_min), term=term)
                     preferred_num_printed += 1
-                    
+                    print (dep['Destination'])
+                    print (u''.join(dep['Destination']).encode('utf-8'))
+
                 else:
-                    key = dep['LineNumber'] + ' ' + clean_text(dep['Destination'])
+                    key = u''.join(dep['LineNumber'] + ' ' + dep['Destination']).encode('utf-8')
                     if key not in print_buffer:
                         print_buffer[key] = []
                     print_buffer[key].append(dep)
@@ -134,12 +128,12 @@ def main():
                 if dep['Deviations'] is not None:
                     for deviation in dep['Deviations']:
                         if deviation['ImportanceLevel'] > 3:
-                            deviations_shown.append(deviation['Consequence'] + ' ' + clean_text(deviation['Text']))
+                            deviations_shown.append(deviation['Consequence'] + ' ' + deviation['Text'])
         # Print deviations
         if deviations_shown:
-            print_out('{}'.format(', '.join(deviations_shown)), term=term)
-        else:
-            print_out('', term=term)
+            print_out(u'{}'.format(', '.join(deviations_shown)).encode('utf-8'), term=term)
+        #else:
+        #    print_out('', term=term)
 
         # Empty the print buffer for printing low prio deps last
         if print_buffer:
@@ -150,14 +144,17 @@ def main():
                     diff = time_diff(dep['ExpectedDateTime'], absVal=False)
                     if diff < 0:
                         continue
-                    est_min = math.floor(diff/60)
+                    est_min = int(math.floor(diff/60))
                     if est_min == 0:
                         est_min = 'Nu'
                     else:
                         est_min = '{}m'.format(est_min)
                     #temp.append('{} [{}]'.format(dep['DisplayTime'], est_min))
                     temp.append(est_min)
+                    break # temp only 1
+
                 print_out('{}'.format(dest), '{}'.format(','.join(temp)), term=term)
+                break # temp only 1
         time.sleep(screen_refresh_freq)
     term.flush()
 

@@ -12,6 +12,8 @@ def make_font(name, size):
         os.path.dirname(__file__), 'fonts', name))
     return ImageFont.truetype(font_path, size)
 
+def ApiException(Exception):
+	pass
 
 """
 tiny_font = ImageFont.truetype(os.path.abspath(os.path.join(
