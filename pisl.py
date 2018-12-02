@@ -24,10 +24,12 @@ refresh_freq = 120 #s
 screen_refresh_freq = 5 #s
 
 size = 15 # Font size
-term = None
+
 
 def print_out(left_text='', right_text=''):
     #print(left_text + ' ' + right_text)
+    font = make_font("ProggyTiny.ttf", size)
+    term = terminal(device, font)
     term.puts(left_text + ' ' + right_text)
     term.flush()
 
@@ -80,8 +82,6 @@ def get_departures():
     return departures
 
 def main():
-    font = make_font("ProggyTiny.ttf", size)
-    term = terminal(device, font)
     last_get_deps = None
     departures = None
     while True:
