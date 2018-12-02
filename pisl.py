@@ -8,7 +8,7 @@ import time
 import os
 import math
 from dateutil.parser import parse
-from helpers import make_font
+from helpers import make_font, ApiException
 
 from oled_options import get_device
 from luma.core.virtual import terminal
@@ -26,10 +26,10 @@ screen_refresh_freq = 5 #s
 size = 15 # Font size
 term = None
 
-def print_out(left_text='', right_text=''):
-    #print(left_text + ' ' + right_text)
+def print_out(left_text='', right_text='', term=None):
+    if(term is None)
+        print(left_text + ' ' + right_text)
     term.puts(left_text + ' ' + right_text)
-
 
 def time_diff(dt, absVal=True):
     if type(dt) != datetime.datetime:
@@ -52,7 +52,7 @@ def clean_text(text):
 
 def get_departures():
 
-    print_out('Making API call...')
+    print_out('Making API call...', term=term)
     
     url = "http://api.sl.se/api2/realtimedeparturesV4.json?key=%s&siteid=%s&timewindow=30" % (realtime_api_key, site_id)
 
@@ -60,12 +60,12 @@ def get_departures():
 
     if resp.status_code != 200:
         # This means something went wrong.
-        raise Exception('HTTP return code is not 200: {}'.format(resp.status_code))
+        raise ApiException('HTTP return code is not 200: {}'.format(resp.status_code))
 
     json = resp.json()
 
     if(json['StatusCode'] != 0):
-        raise Exception('Status code is not 0: {}'.format(json['StatusCode']))
+        raise ApiException('Status code is not 0: {}'.format(json['StatusCode']))
 
     data = json['ResponseData']
 
@@ -85,27 +85,27 @@ def main():
     last_get_deps = None
     departures = None
     while True:
-        
         if departures is None or time_diff(last_get_deps) > refresh_freq:
 
             try:
                 departures = get_departures()
-            except Exception as e:
-                print (e)
+            except ApiException as e:
+                print_out (e, term=term)
+                term.flush()
                 time.sleep(screen_refresh_freq * 2)
                 continue
             last_get_deps = datetime.datetime.now()
 
-        print_out('Age: {}s'.format(time_diff(last_get_deps)))
+        print_out('Age: {}s'.format(time_diff(last_get_deps)), term=term)
         print_buffer = {}
         deviations_shown = []
         preferred_num_printed = 0
-        #print_out(departures.items())
+        #print_out(departures.items(), term=term)
         for di, deps in departures.items():
             if di == 0:
                 continue
-            #print_out('Dir {}:'.format(di))
-            
+            #print_out('Dir {}:'.format(di), term=term)
+
             for dep in deps:
                 diff = time_diff(dep['ExpectedDateTime'], absVal=False)
                 if diff < 0:
@@ -120,8 +120,8 @@ def main():
                     # Only print 3
                     if preferred_num_printed == 3:
                         continue
-                    #print_out(' {} {} {} [{}s ({} min)]'.format(dep['LineNumber'], dep['Destination'], dep['DisplayTime'], diff, est_min))
-                    print_out('{} {}'.format(dep['LineNumber'], clean_text(dep['Destination'])), '{}'.format(est_min))
+                    #print_out(' {} {} {} [{}s ({} min)]'.format(dep['LineNumber'], dep['Destination'], dep['DisplayTime'], diff, est_min), term=term)
+                    print_out('{} {}'.format(dep['LineNumber'], clean_text(dep['Destination'])), '{}'.format(est_min), term=term)
                     preferred_num_printed += 1
                     
                 else:
@@ -137,16 +137,16 @@ def main():
                             deviations_shown.append(deviation['Consequence'] + ' ' + clean_text(deviation['Text']))
         # Print deviations
         if deviations_shown:
-            print_out('{}'.format(', '.join(deviations_shown)))
+            print_out('{}'.format(', '.join(deviations_shown)), term=term)
         else:
-            print_out('')
+            print_out('', term=term)
 
         # Empty the print buffer for printing low prio deps last
         if print_buffer:
             for dest, deps in print_buffer.items():
                 temp = []
                 for dep in deps:
-                    #print_out(dep)
+                    #print_out(dep, term=term)
                     diff = time_diff(dep['ExpectedDateTime'], absVal=False)
                     if diff < 0:
                         continue
@@ -157,8 +157,9 @@ def main():
                         est_min = '{}m'.format(est_min)
                     #temp.append('{} [{}]'.format(dep['DisplayTime'], est_min))
                     temp.append(est_min)
-                print_out('{}'.format(dest), '{}'.format(','.join(temp)))
+                print_out('{}'.format(dest), '{}'.format(','.join(temp)), term=term)
         time.sleep(screen_refresh_freq)
+    term.flush()
 
 if __name__ == "__main__":
     try:
@@ -166,6 +167,3 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         pass
-
-
-
