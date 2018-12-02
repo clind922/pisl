@@ -32,7 +32,7 @@ def print_out(left_text='', right_text=''):
 
 
 def time_diff(dt, absVal=True):
-    if type(dt) == str:
+    if type(dt) != datetime.datetime:
         dt = datetime.datetime.strptime(dt, "%Y-%m-%dT%H:%M:%S")
     t1 = time.mktime(dt.timetuple())
     now = time.mktime(time.localtime())
