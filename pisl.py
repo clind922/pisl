@@ -8,6 +8,7 @@ import time
 import os
 import math
 from dateutil.parser import parse
+from helpers import make_font
 
 from oled_options import get_device
 from luma.core.virtual import terminal
