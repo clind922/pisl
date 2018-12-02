@@ -8,7 +8,7 @@ import time
 import os
 import math
 from dateutil.parser import parse
-from helpers import make_font, ApiException
+from helpers import make_font, time_diff, ApiException
 
 from oled_options import get_device
 from luma.core.virtual import terminal
@@ -28,19 +28,13 @@ term = None
 
 def print_out(left_text='', right_text='', term=None):
     if term is None:
-        print(left_text + ' ' + right_text)
+        print('StdOut: ' + left_text + ' ' + right_text)
     else:
+        l_len = len(left_text)
+        r_len = len(right_text)
+        if l_len + r_len >= term.width:
+            left_text = left_text[:(term.width-r_len)]
         term.puts(left_text + ' ' + right_text + '\n')
-
-def time_diff(dt, absVal=True):
-    if type(dt) != datetime.datetime:
-        dt = datetime.datetime.strptime(dt, "%Y-%m-%dT%H:%M:%S")
-    t1 = time.mktime(dt.timetuple())
-    now = time.mktime(time.localtime())
-    diff = t1 - now
-    if absVal:
-        diff = abs(diff)
-    return int(diff)
 
 def get_departures():
 
@@ -77,6 +71,7 @@ def main():
     last_get_deps = None
     departures = None
     while True:
+        ter.clear()
         if departures is None or time_diff(last_get_deps) > refresh_freq:
 
             try:
@@ -92,11 +87,10 @@ def main():
         print_buffer = {}
         deviations_shown = []
         preferred_num_printed = 0
-        #print_out(departures.items(), term=term)
+
         for di, deps in departures.items():
             if di == 0:
                 continue
-            #print_out('Dir {}:'.format(di), term=term)
 
             for dep in deps:
                 diff = time_diff(dep['ExpectedDateTime'], absVal=False)
@@ -112,14 +106,11 @@ def main():
                     # Only print 3
                     if preferred_num_printed == 3:
                         continue
-                    #print_out(' {} {} {} [{}s ({} min)]'.format(dep['LineNumber'], dep['Destination'], dep['DisplayTime'], diff, est_min), term=term)
-                    print_out(u'{} {}'.format(dep['LineNumber'], dep['Destination']).encode('utf-8'), '{}'.format(est_min), term=term)
+                    print_out(u'{} {}'.format(dep['LineNumber'], dep['Destination']), '{}'.format(est_min), term=term)
                     preferred_num_printed += 1
-                    print (dep['Destination'])
-                    print (u''.join(dep['Destination']).encode('utf-8'))
 
                 else:
-                    key = u''.join(dep['LineNumber'] + ' ' + dep['Destination']).encode('utf-8')
+                    key = u''.join(dep['LineNumber'] + ' ' + dep['Destination'])
                     if key not in print_buffer:
                         print_buffer[key] = []
                     print_buffer[key].append(dep)
@@ -131,7 +122,7 @@ def main():
                             deviations_shown.append(deviation['Consequence'] + ' ' + deviation['Text'])
         # Print deviations
         if deviations_shown:
-            print_out(u'{}'.format(', '.join(deviations_shown)).encode('utf-8'), term=term)
+            print_out(u'{}'.format(', '.join(deviations_shown)), term=term)
         #else:
         #    print_out('', term=term)
 
