@@ -8,9 +8,10 @@ import time
 import os
 import math
 from dateutil.parser import parse
-#from oled_options import get_device
-#from luma.core.virtual import terminal
-#from PIL import ImageFont
+
+from oled_options import get_device
+from luma.core.virtual import terminal
+from PIL import ImageFont
 
 realtime_api_key = "75373d23fb0a4c47b7f3625c6fe97199"
 site_id = "9294"
@@ -23,7 +24,10 @@ screen_refresh_freq = 5 #s
 
 
 def print_out(left_text='', right_text=''):
-    print(left_text + ' ' + right_text)
+    #print(left_text + ' ' + right_text)
+    term.puts(left_text + ' ' + right_text)
+    term.flush()
+
 
 def time_diff(dt, absVal=True):
     if type(dt) == str:
@@ -65,10 +69,6 @@ def get_departures():
 
     metros = data['Metros']
 
-    #JourneyDirection
-
-    #print (metros)
-
     departures = {1: [], 2: [], 0: []}
 
     for item in metros:
@@ -77,6 +77,9 @@ def get_departures():
     return departures
 
 def main():
+    size = 15
+    font = make_font("ProggyTiny.ttf", size)
+    term = terminal(device, font)
     last_get_deps = None
     departures = None
     while True:
@@ -157,7 +160,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        #device = get_device()
+        device = get_device()
         main()
     except KeyboardInterrupt:
         pass
