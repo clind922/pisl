@@ -8,7 +8,9 @@ import time
 import os
 import math
 from dateutil.parser import parse
-from helpers import make_font, time_diff, ApiException
+from helpers import make_font
+from helpers import time_diff
+from helpers import ApiException
 
 from oled_options import get_device
 from luma.core.render import canvas
@@ -27,28 +29,41 @@ refresh_freq = 120 #s
 screen_refresh_freq = 5 #s
 
 row = 0
-line_height = 12
 font_size = 15
 width = 0
 
+REALTIME_API_KEY = os.getenv("REALTIME_API_KEY")
+
 def print_out(left_text='', right_text='', draw=None):
+    global row
     if draw is None:
         print('StdOut: ' + left_text + ' ' + right_text)
     else:
+
+        font = make_font("ProggyTiny.ttf", font_size)
+        # Find char width & height
+        _cw, _ch = (0, 0)
+        for i in range(32, 128):
+            w, h = self.font.getsize(chr(i))
+            _cw = max(w, _cw)
+            _ch = max(h, _ch)
+        max_chars = width // _cw
+
         l_len = len(left_text)
         r_len = len(right_text)
-        if l_len + r_len >= width:
-            left_text = left_text[:(width - r_len - 1)]
+        if l_len + r_len >= max_chars:
+            left_text = left_text[:(max_chars - r_len - 1)]
         else:
-            right_text = ' ' * (width - l_len - r_len - 1) + right_text
-        font = make_font("ProggyTiny.ttf", font_size)
+            right_text = ' ' * (max_chars - l_len - r_len - 1) + right_text
+        
+
         y = row * line_height
         row += 1
         draw.text((0, y), left_text + ' ' + right_text, font=font, fill="white")
 
 def get_departures():
 
-    print_out('Making API call...', draw=draw)
+    print('Making API call...')
     
     url = "http://api.sl.se/api2/realtimedeparturesV4.json?key=%s&siteid=%s&timewindow=30" % (REALTIME_API_KEY, site_id)
 
@@ -75,6 +90,7 @@ def get_departures():
     return departures
 
 def draw_deps(draw):
+    global row
     last_get_deps = None
     departures = None
     if departures is None or time_diff(last_get_deps) > refresh_freq:
