@@ -24,5 +24,5 @@ def time_diff(dt, absVal=True):
         diff = abs(diff)
     return int(diff)
 
-def ApiException(Exception):
+class ApiException(Exception):
 	pass

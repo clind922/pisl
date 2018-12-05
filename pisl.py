@@ -18,7 +18,7 @@ from PIL import ImageFont
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path='.env')
 
 site_id = "9294"
 #Sätra = 9288
@@ -32,6 +32,9 @@ row = 0
 font_size = 15
 width = 0
 
+last_get_deps = None
+departures = None
+
 REALTIME_API_KEY = os.getenv("REALTIME_API_KEY")
 
 def print_out(left_text='', right_text='', draw=None):
@@ -44,7 +47,7 @@ def print_out(left_text='', right_text='', draw=None):
         # Find char width & height
         _cw, _ch = (0, 0)
         for i in range(32, 128):
-            w, h = self.font.getsize(chr(i))
+            w, h = font.getsize(chr(i))
             _cw = max(w, _cw)
             _ch = max(h, _ch)
         max_chars = width // _cw
@@ -57,7 +60,7 @@ def print_out(left_text='', right_text='', draw=None):
             right_text = ' ' * (max_chars - l_len - r_len - 1) + right_text
         
 
-        y = row * line_height
+        y = row * _ch
         row += 1
         draw.text((0, y), left_text + ' ' + right_text, font=font, fill="white")
 
@@ -91,10 +94,9 @@ def get_departures():
 
 def draw_deps(draw):
     global row
-    last_get_deps = None
-    departures = None
+    global last_get_deps
+    global departures
     if departures is None or time_diff(last_get_deps) > refresh_freq:
-
         try:
             departures = get_departures()
         except ApiException as e:
@@ -102,7 +104,6 @@ def draw_deps(draw):
             time.sleep(screen_refresh_freq * 2)
             return
         last_get_deps = datetime.datetime.now()
-
     
     print_buffer = {}
     deviations_shown = []
@@ -116,7 +117,7 @@ def draw_deps(draw):
             diff = time_diff(dep['ExpectedDateTime'], absVal=False)
             if diff < 0:
                 continue
-            est_min = int(math.floor(diff/60))
+            est_min = int(math.floor(diff / 60))
             if est_min == 0:
                 est_min = 'Nu'
             else:
@@ -154,17 +155,17 @@ def draw_deps(draw):
                 diff = time_diff(dep['ExpectedDateTime'], absVal=False)
                 if diff < 0:
                     continue
-                est_min = int(math.floor(diff/60))
+                est_min = int(math.floor(diff / 60))
                 if est_min == 0:
                     est_min = 'Nu'
                 else:
                     est_min = '{}m'.format(est_min)
                 #temp.append('{} [{}]'.format(dep['DisplayTime'], est_min))
                 temp.append(est_min)
-                break # temp only 1
+                #break # temp only 1
 
             print_out(u'{}'.format(dest), '{}'.format(','.join(temp)), draw=draw)
-            break # temp only 1
+            #break # temp only 1
     time.sleep(screen_refresh_freq)
     row = 0
 
