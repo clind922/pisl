@@ -11,10 +11,13 @@ from dateutil.parser import parse
 from helpers import make_font, time_diff, ApiException
 
 from oled_options import get_device
-from luma.core.virtual import terminal
+from luma.core.render import canvas
 from PIL import ImageFont
 
-realtime_api_key = "75373d23fb0a4c47b7f3625c6fe97199"
+from dotenv import load_dotenv
+
+load_dotenv()
+
 site_id = "9294"
 #Sätra = 9288
 #Liljeholmen = 9294
@@ -23,26 +26,31 @@ refresh_freq = 120 #s
 
 screen_refresh_freq = 5 #s
 
-size = 15 # Font size
-term = None
+row = 0
+line_height = 12
+font_size = 15
+width = 0
 
-def print_out(left_text='', right_text='', term=None):
-    if term is None:
+def print_out(left_text='', right_text='', draw=None):
+    if draw is None:
         print('StdOut: ' + left_text + ' ' + right_text)
     else:
         l_len = len(left_text)
         r_len = len(right_text)
-        if l_len + r_len >= term.width:
-            left_text = left_text[:(term.width - r_len)]
+        if l_len + r_len >= width:
+            left_text = left_text[:(width - r_len - 1)]
         else:
-            right_text = ' ' * (term.width - l_len - r_len) + right_text
-        term.puts(left_text + right_text + '\n')
+            right_text = ' ' * (width - l_len - r_len - 1) + right_text
+        font = make_font("ProggyTiny.ttf", font_size)
+        y = row * line_height
+        row += 1
+        draw.text((0, y), left_text + ' ' + right_text, font=font, fill="white")
 
 def get_departures():
 
-    print_out('Making API call...', term=term)
+    print_out('Making API call...', draw=draw)
     
-    url = "http://api.sl.se/api2/realtimedeparturesV4.json?key=%s&siteid=%s&timewindow=30" % (realtime_api_key, site_id)
+    url = "http://api.sl.se/api2/realtimedeparturesV4.json?key=%s&siteid=%s&timewindow=30" % (REALTIME_API_KEY, site_id)
 
     resp = requests.get(url)
 
@@ -66,34 +74,66 @@ def get_departures():
 
     return departures
 
-def main():
-    font = make_font("ProggyTiny.ttf", size)
-    term = terminal(device, font)
-    term.animate = False
+def draw_deps(draw):
     last_get_deps = None
     departures = None
-    while True:
-        term.clear()
-        if departures is None or time_diff(last_get_deps) > refresh_freq:
+    if departures is None or time_diff(last_get_deps) > refresh_freq:
 
-            try:
-                departures = get_departures()
-            except ApiException as e:
-                print_out (e, term=term)
-                term.flush()
-                time.sleep(screen_refresh_freq * 2)
+        try:
+            departures = get_departures()
+        except ApiException as e:
+            print_out (e, draw=draw)
+            time.sleep(screen_refresh_freq * 2)
+            return
+        last_get_deps = datetime.datetime.now()
+
+    
+    print_buffer = {}
+    deviations_shown = []
+    preferred_num_printed = 0
+
+    for di, deps in departures.items():
+        if di == 0:
+            continue
+
+        for dep in deps:
+            diff = time_diff(dep['ExpectedDateTime'], absVal=False)
+            if diff < 0:
                 continue
-            last_get_deps = datetime.datetime.now()
+            est_min = int(math.floor(diff/60))
+            if est_min == 0:
+                est_min = 'Nu'
+            else:
+                est_min = '{} min'.format(est_min)
+            # Print full list, if it is the preferred dir
+            if di == preferred_dir:
+                # Only print 3
+                if preferred_num_printed == 3:
+                    continue
+                print_out(u'{} {}'.format(dep['LineNumber'], dep['Destination']), '{}'.format(est_min), draw=draw)
+                preferred_num_printed += 1
 
-        print_out('Age: {}s'.format(time_diff(last_get_deps)), term=term)
-        print_buffer = {}
-        deviations_shown = []
-        preferred_num_printed = 0
+            else:
+                key = u''.join(dep['LineNumber'] + ' ' + dep['Destination'])
+                if key not in print_buffer:
+                    print_buffer[key] = []
+                print_buffer[key].append(dep)
 
-        for di, deps in departures.items():
-            if di == 0:
-                continue
+            # Look for deviations and collect them
+            if dep['Deviations'] is not None:
+                for deviation in dep['Deviations']:
+                    if deviation['ImportanceLevel'] > 3:
+                        deviations_shown.append(deviation['Consequence'] + ' ' + deviation['Text'])
+    # Print deviations
+    if deviations_shown:
+        print_out(u'{}'.format(', '.join(deviations_shown)), draw=draw)
+    else:
+        print_out('', 'Age: {}s'.format(time_diff(last_get_deps)), draw=draw)
 
+    # Empty the print buffer for printing low prio deps last
+    if print_buffer:
+        for dest, deps in print_buffer.items():
+            temp = []
             for dep in deps:
                 diff = time_diff(dep['ExpectedDateTime'], absVal=False)
                 if diff < 0:
@@ -102,58 +142,25 @@ def main():
                 if est_min == 0:
                     est_min = 'Nu'
                 else:
-                    est_min = '{} min'.format(est_min)
-                # Print full list, if it is the preferred dir
-                if di == preferred_dir:
-                    # Only print 3
-                    if preferred_num_printed == 3:
-                        continue
-                    print_out(u'{} {}'.format(dep['LineNumber'], dep['Destination']), '{}'.format(est_min), term=term)
-                    preferred_num_printed += 1
-
-                else:
-                    key = u''.join(dep['LineNumber'] + ' ' + dep['Destination'])
-                    if key not in print_buffer:
-                        print_buffer[key] = []
-                    print_buffer[key].append(dep)
-
-                # Look for deviations and collect them
-                if dep['Deviations'] is not None:
-                    for deviation in dep['Deviations']:
-                        if deviation['ImportanceLevel'] > 3:
-                            deviations_shown.append(deviation['Consequence'] + ' ' + deviation['Text'])
-        # Print deviations
-        if deviations_shown:
-            print_out(u'{}'.format(', '.join(deviations_shown)), term=term)
-        #else:
-        #    print_out('', term=term)
-
-        # Empty the print buffer for printing low prio deps last
-        if print_buffer:
-            for dest, deps in print_buffer.items():
-                temp = []
-                for dep in deps:
-                    #print_out(dep, term=term)
-                    diff = time_diff(dep['ExpectedDateTime'], absVal=False)
-                    if diff < 0:
-                        continue
-                    est_min = int(math.floor(diff/60))
-                    if est_min == 0:
-                        est_min = 'Nu'
-                    else:
-                        est_min = '{}m'.format(est_min)
-                    #temp.append('{} [{}]'.format(dep['DisplayTime'], est_min))
-                    temp.append(est_min)
-                    break # temp only 1
-
-                print_out(u'{}'.format(dest), '{}'.format(','.join(temp)), term=term)
+                    est_min = '{}m'.format(est_min)
+                #temp.append('{} [{}]'.format(dep['DisplayTime'], est_min))
+                temp.append(est_min)
                 break # temp only 1
-        time.sleep(screen_refresh_freq)
-    term.flush()
+
+            print_out(u'{}'.format(dest), '{}'.format(','.join(temp)), draw=draw)
+            break # temp only 1
+    time.sleep(screen_refresh_freq)
+    row = 0
+
+def main():
+    while True:
+        with canvas(device) as draw:
+            draw_deps(draw)
 
 if __name__ == "__main__":
     try:
         device = get_device()
+        width = device.width
         main()
     except KeyboardInterrupt:
         pass

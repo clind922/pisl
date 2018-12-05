@@ -1,0 +1,4 @@
+requests
+python-dotenv
+luma.core
+dateutil
