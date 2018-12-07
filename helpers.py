@@ -24,5 +24,11 @@ def time_diff(dt, absVal=True):
         diff = abs(diff)
     return int(diff)
 
+def is_active_hours(active_hours, limit):
+	now = datetime.datetime.now()
+    cron = croniter.croniter(active_hours, now)
+    next_d = cron.get_next(datetime.datetime)
+    diff = time_diff(next_d)
+
 class ApiException(Exception):
 	pass

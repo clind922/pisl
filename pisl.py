@@ -7,35 +7,44 @@ import datetime
 import time
 import os
 import math
-from dateutil.parser import parse
+
 from helpers import make_font
 from helpers import time_diff
+from helpers import is_active_hours
 from helpers import ApiException
 
 from oled_options import get_device
 from luma.core.render import canvas
 from PIL import ImageFont
+from dateutil.parser import parse
+import croniter
 
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path='.env')
 
-site_id = "9294"
+site_id = "9294" # TODO: move to env
 #Sätra = 9288
 #Liljeholmen = 9294
 preferred_dir = 1
 refresh_freq = 120 #s
 
 screen_refresh_freq = 5 #s
+start_time = datetime.datetime.now()
 
 row = 0
+max_rows = 0
 font_size = 15
 width = 0
+height = 0
+line_height = 0
 
 last_get_deps = None
 departures = None
 
 REALTIME_API_KEY = os.getenv("REALTIME_API_KEY")
+
+active_hours = '* 7-9,18-20 * * 1-5' # TODO: move to env
 
 def print_out(left_text='', right_text='', draw=None):
     global row
@@ -43,24 +52,14 @@ def print_out(left_text='', right_text='', draw=None):
         print('StdOut: ' + left_text + ' ' + right_text)
     else:
 
-        font = make_font("ProggyTiny.ttf", font_size)
-        # Find char width & height
-        _cw, _ch = (0, 0)
-        for i in range(32, 128):
-            w, h = font.getsize(chr(i))
-            _cw = max(w, _cw)
-            _ch = max(h, _ch)
-        max_chars = width // _cw
-
         l_len = len(left_text)
         r_len = len(right_text)
         if l_len + r_len >= max_chars:
             left_text = left_text[:(max_chars - r_len - 1)]
         else:
             right_text = ' ' * (max_chars - l_len - r_len - 1) + right_text
-        
 
-        y = row * _ch
+        y = row * line_height
         row += 1
         draw.text((0, y), left_text + ' ' + right_text, font=font, fill="white")
 
@@ -149,6 +148,9 @@ def draw_deps(draw):
 
     # Empty the print buffer for printing low prio deps last
     if print_buffer:
+
+        if row + len(print_buffer) < max_rows:
+            row += 1
         for dest, deps in print_buffer.items():
             temp = []
             for dep in deps:
@@ -162,22 +164,42 @@ def draw_deps(draw):
                     est_min = '{}m'.format(est_min)
                 #temp.append('{} [{}]'.format(dep['DisplayTime'], est_min))
                 temp.append(est_min)
-                #break # temp only 1
+                if len(temp) == 2:
+                    break
 
             print_out(u'{}'.format(dest), '{}'.format(','.join(temp)), draw=draw)
             #break # temp only 1
-    time.sleep(screen_refresh_freq)
     row = 0
 
 def main():
+
     while True:
         with canvas(device) as draw:
-            draw_deps(draw)
+            # Only draw if started recently
+            if time_diff(start_time) > refresh_freq:
+                draw_deps(draw)
+            # Or only draw if active hours
+            elif is_active_hours(active_hours, refresh_freq):
+                draw_deps(draw)
+        time.sleep(screen_refresh_freq)
+
 
 if __name__ == "__main__":
     try:
         device = get_device()
         width = device.width
+        height = device.height
+        font = make_font("ProggyTiny.ttf", font_size)
+        # Find char width & height
+        _cw, _ch = (0, 0)
+        for i in range(32, 128):
+            w, h = font.getsize(chr(i))
+            _cw = max(w, _cw)
+            _ch = max(h, _ch)
+        max_chars = width // _cw
+        line_height = _ch
+        max_rows = height // _ch
+        start_time = datetime.datetime.now()
         main()
     except KeyboardInterrupt:
         pass
