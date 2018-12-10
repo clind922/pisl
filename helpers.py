@@ -8,6 +8,7 @@ from PIL import ImageFont
 import os.path
 import datetime
 import time
+import croniter
 
 def make_font(name, size):
     font_path = os.path.abspath(os.path.join(
@@ -29,6 +30,7 @@ def is_active_hours(active_hours, limit):
     cron = croniter.croniter(active_hours, now)
     next_d = cron.get_next(datetime.datetime)
     diff = time_diff(next_d)
+    return diff < 120
 
 class ApiException(Exception):
 	pass

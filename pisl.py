@@ -17,20 +17,20 @@ from oled_options import get_device
 from luma.core.render import canvas
 from PIL import ImageFont
 from dateutil.parser import parse
-import croniter
 import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path='.env')
 
-site_id = "9294" # TODO: move to env
-#Sätra = 9288
-#Liljeholmen = 9294
-preferred_dir = 1
-refresh_freq = 120 #s
+preferred_dir = 1 # SL API direction to draw
 
-screen_refresh_freq = 5 #s
+data_refresh_delay_normal = 120 # Normal API frefresh fequency
+data_refresh_delay_fast = 30 # A faster API refresh freqency
+
+screen_data_refresh_delay = 5 # Redraw (cached) data every X seconds
+screen_active_time = 120 # How long the screen is active after button press (during off-hours)
+
 start_time = datetime.datetime.now()
 
 row = 0
@@ -47,10 +47,18 @@ departures = None
 
 REALTIME_API_KEY = os.getenv("REALTIME_API_KEY")
 
-active_hours = '* 7-9,18-20 * * 1-5' # TODO: move to env
+SL_SITE_ID = os.getenv("SL_SITE_ID")
+#Sätra = 9288
+#Liljeholmen = 9294
+
+ACTIVE_HOURS = os.getenv("ACTIVE_HOURS")
 
 def button_callback(channel):
+    global button_press_time
+    # Set button press time
     button_press_time = datetime.datetime.now()
+    # Force API refresh
+    last_get_deps = None
     print("Button was pushed!")
 
 def button_setup():
@@ -79,7 +87,7 @@ def print_out(left_text='', right_text='', draw=None):
 def get_departures():
     print('Making API call...')
     
-    url = "http://api.sl.se/api2/realtimedeparturesV4.json?key=%s&siteid=%s&timewindow=30" % (REALTIME_API_KEY, site_id)
+    url = "http://api.sl.se/api2/realtimedeparturesV4.json?key=%s&siteid=%s&timewindow=30" % (REALTIME_API_KEY, SL_SITE_ID)
     resp = requests.get(url)
 
     if resp.status_code != 200:
@@ -98,16 +106,16 @@ def get_departures():
 
     return departures
 
-def draw_deps(draw):
+def draw_deps(draw, data_refresh_delay):
     global row
     global last_get_deps
     global departures
-    if departures is None or time_diff(last_get_deps) > refresh_freq:
+    if departures is None or time_diff(last_get_deps) > data_refresh_delay:
         try:
             departures = get_departures()
         except ApiException as e:
             print_out (e, draw=draw)
-            time.sleep(screen_refresh_freq * 2)
+            time.sleep(screen_data_refresh_delay * 2)
             return
         last_get_deps = datetime.datetime.now()
     
@@ -151,7 +159,7 @@ def draw_deps(draw):
     if deviations_shown:
         print_out(u'{}'.format(', '.join(deviations_shown)), draw=draw)
     else:
-        print_out('', 'Age: {}s'.format(time_diff(last_get_deps)), draw=draw)
+        print_out('', 'Data age: {}s'.format(time_diff(last_get_deps)), draw=draw)
 
     # Empty the print buffer for printing low prio deps last
     if print_buffer:
@@ -175,7 +183,8 @@ def draw_deps(draw):
                     break
 
             print_out(u'{}'.format(dest), '{}'.format(','.join(temp)), draw=draw)
-            #break # temp only 1
+            if row == max_rows:
+                break
     row = 0
 
 def main():
@@ -183,15 +192,15 @@ def main():
     while True:
         with canvas(device) as draw:
             # Only draw if started recently
-            if time_diff(start_time) > refresh_freq:
-                draw_deps(draw)
+            if time_diff(start_time) < screen_active_time:
+                draw_deps(draw, data_refresh_delay_normal)
             # Or only draw if active hours
-            elif is_active_hours(active_hours, refresh_freq):
+            elif is_active_hours(ACTIVE_HOURS, screen_active_time):
                 draw_deps(draw)
             # Or if button is pressed recently
-            elif button_press_time is not None and time_diff(button_press_time) > refresh_freq:
-                draw_deps(draw)
-        time.sleep(screen_refresh_freq)
+            elif button_press_time is not None and time_diff(button_press_time) < screen_active_time:
+                draw_deps(draw, data_refresh_delay_fast)
+        time.sleep(screen_data_refresh_delay)
 
 if __name__ == "__main__":
     try:
@@ -209,6 +218,7 @@ if __name__ == "__main__":
         line_height = _ch
         max_rows = height // _ch
         start_time = datetime.datetime.now()
+        button_setup()
         main()
     except KeyboardInterrupt:
         pass
