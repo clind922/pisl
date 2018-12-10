@@ -114,7 +114,7 @@ def draw_deps(draw, data_refresh_delay):
         try:
             departures = get_departures()
         except ApiException as e:
-            print_out (e, draw=draw)
+            print_out (str(e), '', draw=draw)
             time.sleep(screen_data_refresh_delay * 2)
             return
         last_get_deps = datetime.datetime.now()
@@ -165,7 +165,7 @@ def draw_deps(draw, data_refresh_delay):
     if print_buffer:
 
         if row + len(print_buffer) < max_rows:
-            row += 1
+            row += (max_rows - row - len(print_buffer))
         for dest, deps in print_buffer.items():
             temp = []
             for dep in deps:
@@ -195,7 +195,7 @@ def main():
             if time_diff(start_time) < screen_active_time:
                 draw_deps(draw, data_refresh_delay_normal)
             # Or only draw if active hours
-            elif is_active_hours(ACTIVE_HOURS, screen_active_time):
+            elif ACTIVE_HOURS is not None and is_active_hours(ACTIVE_HOURS, screen_active_time):
                 draw_deps(draw)
             # Or if button is pressed recently
             elif button_press_time is not None and time_diff(button_press_time) < screen_active_time:
@@ -203,6 +203,10 @@ def main():
         time.sleep(screen_data_refresh_delay)
 
 if __name__ == "__main__":
+    if SL_SITE_ID is None:
+        exit("SL_SITE_ID env missing.")
+    if REALTIME_API_KEY is None:
+        exit("REALTIME_API_KEY env missing.")
     try:
         device = get_device()
         width = device.width
