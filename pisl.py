@@ -18,6 +18,7 @@ from luma.core.render import canvas
 from PIL import ImageFont
 from dateutil.parser import parse
 import croniter
+import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 
 from dotenv import load_dotenv
 
@@ -38,13 +39,25 @@ font_size = 15
 width = 0
 height = 0
 line_height = 0
+button_gpio_pin = 15
 
 last_get_deps = None
+button_press_time = None
 departures = None
 
 REALTIME_API_KEY = os.getenv("REALTIME_API_KEY")
 
 active_hours = '* 7-9,18-20 * * 1-5' # TODO: move to env
+
+def button_callback(channel):
+    button_press_time = datetime.datetime.now()
+    print("Button was pushed!")
+
+def button_setup():
+    GPIO.setwarnings(False) # Ignore warning for now
+    GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
+    GPIO.setup(button_gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin to be an input pin and set initial value to be pulled low (off)
+    GPIO.add_event_detect(button_gpio_pin,GPIO.RISING,callback=button_callback) # Setup event on pin rising edge
 
 def print_out(left_text='', right_text='', draw=None):
     global row
@@ -64,28 +77,22 @@ def print_out(left_text='', right_text='', draw=None):
         draw.text((0, y), left_text + ' ' + right_text, font=font, fill="white")
 
 def get_departures():
-
     print('Making API call...')
     
     url = "http://api.sl.se/api2/realtimedeparturesV4.json?key=%s&siteid=%s&timewindow=30" % (REALTIME_API_KEY, site_id)
-
     resp = requests.get(url)
 
     if resp.status_code != 200:
         # This means something went wrong.
         raise ApiException('HTTP return code is not 200: {}'.format(resp.status_code))
-
     json = resp.json()
 
     if(json['StatusCode'] != 0):
         raise ApiException('Status code is not 0: {}'.format(json['StatusCode']))
 
     data = json['ResponseData']
-
     metros = data['Metros']
-
     departures = {1: [], 2: [], 0: []}
-
     for item in metros:
         departures[item['JourneyDirection']].append(item)
 
@@ -181,8 +188,10 @@ def main():
             # Or only draw if active hours
             elif is_active_hours(active_hours, refresh_freq):
                 draw_deps(draw)
+            # Or if button is pressed recently
+            elif button_press_time is not None and time_diff(button_press_time) > refresh_freq:
+                draw_deps(draw)
         time.sleep(screen_refresh_freq)
-
 
 if __name__ == "__main__":
     try:
@@ -203,3 +212,5 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         pass
+    finally:
+        GPIO.cleanup() # Clean up
