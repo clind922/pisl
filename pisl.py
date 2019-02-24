@@ -113,9 +113,9 @@ def draw_deps(draw, data_refresh_delay):
     if departures is None or time_diff(last_get_deps) > data_refresh_delay:
         try:
             departures = get_departures()
-        except ApiException as e:
+        except (ApiException, ConnectionError) as e:
             print_out (str(e), '', draw=draw)
-            time.sleep(screen_data_refresh_delay * 2)
+            time.sleep(data_refresh_delay_fast) # 30s
             return
         last_get_deps = datetime.datetime.now()
     
@@ -196,7 +196,7 @@ def main():
                 draw_deps(draw, data_refresh_delay_normal)
             # Or only draw if active hours
             elif ACTIVE_HOURS is not None and is_active_hours(ACTIVE_HOURS, screen_active_time):
-                draw_deps(draw)
+                draw_deps(draw, data_refresh_delay_normal)
             # Or if button is pressed recently
             elif button_press_time is not None and time_diff(button_press_time) < screen_active_time:
                 draw_deps(draw, data_refresh_delay_fast)
