@@ -118,7 +118,7 @@ def draw_deps(draw, data_refresh_delay):
             print_out (str(e), '', draw=draw)
             time.sleep(data_refresh_delay_fast) # 30s
             return
-        except ConnectionError, ConnectTimeout, HTTPError, ReadTimeout, Timeout) as e:
+        except (ConnectionError, ConnectTimeout, HTTPError, ReadTimeout, Timeout) as e:
             print_out (str(e), '', draw=draw)
             time.sleep(data_refresh_delay_fast) # 30s
             return
