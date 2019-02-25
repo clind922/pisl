@@ -12,6 +12,7 @@ from helpers import make_font
 from helpers import time_diff
 from helpers import is_active_hours
 from helpers import ApiException
+from requests import ReadTimeout, ConnectTimeout, HTTPError, Timeout, ConnectionError
 
 from oled_options import get_device
 from luma.core.render import canvas
@@ -113,7 +114,11 @@ def draw_deps(draw, data_refresh_delay):
     if departures is None or time_diff(last_get_deps) > data_refresh_delay:
         try:
             departures = get_departures()
-        except (ApiException, ConnectionError) as e:
+        except ApiException as e:
+            print_out (str(e), '', draw=draw)
+            time.sleep(data_refresh_delay_fast) # 30s
+            return
+        except ConnectionError, ConnectTimeout, HTTPError, ReadTimeout, Timeout) as e:
             print_out (str(e), '', draw=draw)
             time.sleep(data_refresh_delay_fast) # 30s
             return
