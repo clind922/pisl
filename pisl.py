@@ -122,6 +122,10 @@ def draw_deps(draw, data_refresh_delay):
             print_out (str(e), '', draw=draw)
             time.sleep(data_refresh_delay_fast) # 30s
             return
+        except ValueError as e: # Can be internet connection failure
+            print_out (str(e), '', draw=draw)
+            time.sleep(data_refresh_delay_fast * 10) # 5m
+            return 
         last_get_deps = datetime.datetime.now()
     
     print_buffer = {}
