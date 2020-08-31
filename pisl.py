@@ -24,8 +24,6 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path='.env')
 
-preferred_dir = 1 # SL API direction to draw
-
 data_refresh_delay_normal = 120 # Normal API frefresh fequency
 data_refresh_delay_fast = 30 # A faster API refresh freqency
 
@@ -47,6 +45,8 @@ button_press_time = None
 departures = None
 
 REALTIME_API_KEY = os.getenv("REALTIME_API_KEY")
+
+PREFERRED_JOURNEY_DIRECTION = os.getenv("PREFERRED_JOURNEY_DIRECTION") # SL API direction to draw fully
 
 TRANSPORT_TYPE = os.getenv("TRANSPORT_TYPE")
 
@@ -148,7 +148,7 @@ def draw_deps(draw, data_refresh_delay):
             else:
                 est_min = '{} min'.format(est_min)
             # Print full list, if it is the preferred dir
-            if di == preferred_dir:
+            if di == PREFERRED_JOURNEY_DIRECTION:
                 # Only print 3
                 if preferred_num_printed == 3:
                     continue
