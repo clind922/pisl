@@ -48,6 +48,8 @@ departures = None
 
 REALTIME_API_KEY = os.getenv("REALTIME_API_KEY")
 
+TRANSPORT_TYPE = os.getenv("TRANSPORT_TYPE")
+
 SL_SITE_ID = os.getenv("SL_SITE_ID")
 #Sätra = 9288
 #Liljeholmen = 9294
@@ -100,9 +102,9 @@ def get_departures():
         raise ApiException('Status code is not 0: {}'.format(json['StatusCode']))
 
     data = json['ResponseData']
-    metros = data['Metros']
+    transport_type = data[TRANSPORT_TYPE]
     departures = {1: [], 2: [], 0: []}
-    for item in metros:
+    for item in transport_type:
         departures[item['JourneyDirection']].append(item)
 
     return departures
