@@ -26,6 +26,8 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path='.env')
 
+data_refresh_delay_normal = 30
+
 screen_data_refresh_delay = 1 # Redraw (cached) data every X seconds
 screen_active_time = 240 # How long the screen is active after button press (during off-hours)
 
@@ -41,6 +43,7 @@ button_gpio_pin = 15
 
 button_press_time = None
 atd_file_data = None
+last_get_deps = None
 
 
 ACTIVE_HOURS = os.getenv("ACTIVE_HOURS")
@@ -49,6 +52,7 @@ def button_callback(channel):
     global button_press_time
     # Set button press time
     button_press_time = datetime.datetime.now()
+    last_get_deps = None
     print("Button was pushed!")
 
 def button_setup():
@@ -74,13 +78,15 @@ def print_out(left_text='', right_text='', draw=None):
         row += 1
         draw.text((0, y), left_text + ' ' + right_text, font=font, fill="white")
 
-def draw_atd(draw, data_refresh_delay):
+def draw_atd(draw):
     global row
     global last_get_deps
-    f = open("atd.txt", "r")
-    atd_file_data = f.read()
-    atd_file_data = atd_file_data.splitlines()
-    f.close()
+    if departures is None or time_diff(last_get_deps) > data_refresh_delay:
+        f = open("atd.txt", "r")
+        atd_file_data = f.read()
+        atd_file_data = atd_file_data.splitlines()
+        f.close()
+    row = 0
     for line in atd_file_data:
     	matches = re.findall("(!([a-z_]+)\((\d+)\))", line)
         for match in matches:
@@ -88,6 +94,8 @@ def draw_atd(draw, data_refresh_delay):
             exec('val = {}({})'.format(match[1], match[2]), {'tdiff_text': tdiff_text}, ret)
             line = line.replace(match[0], ret['val'])
     	print_out(line, '', draw=draw)
+        if row == max_rows:
+            break
 
 def main():
 
@@ -95,20 +103,16 @@ def main():
         with canvas(device) as draw:
             # Only draw if started recently
             if time_diff(start_time) < screen_active_time:
-                draw_atd(draw, data_refresh_delay_normal)
+                draw_atd(draw)
             # Or only draw if active hours
             elif ACTIVE_HOURS is not None and is_active_hours(ACTIVE_HOURS, screen_active_time):
-                draw_atd(draw, data_refresh_delay_normal)
+                draw_atd(draw)
             # Or if button is pressed recently
             elif button_press_time is not None and time_diff(button_press_time) < screen_active_time:
-                draw_atd(draw, data_refresh_delay_fast)
+                draw_atd(draw)
         time.sleep(screen_data_refresh_delay)
 
 if __name__ == "__main__":
-    if SL_SITE_ID is None:
-        exit("SL_SITE_ID env missing.")
-    if REALTIME_API_KEY is None:
-        exit("REALTIME_API_KEY env missing.")
     try:
         device = get_device()
         width = device.width
