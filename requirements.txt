@@ -1,5 +1,5 @@
 requests
 python-dotenv
 luma.core
-dateutil
+python-dateutil
 croniter
