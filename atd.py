@@ -82,7 +82,7 @@ def draw_atd(draw):
     global row
     global last_get_deps
     global atd_file_data
-    if atd_file_data is None or time_diff(last_get_deps) > data_refresh_delay:
+    if atd_file_data is None or last_get_deps is None or time_diff(last_get_deps) > data_refresh_delay:
         f = open("atd.txt", "r")
         atd_file_data = f.read()
         atd_file_data = atd_file_data.splitlines()
@@ -94,7 +94,7 @@ def draw_atd(draw):
             ret = {}
             exec('val = {}({})'.format(match[1], match[2]), {'tdiff_text': tdiff_text}, ret)
             line = line.replace(match[0], ret['val'])
-    	print_out(line, '', draw=draw)
+    	print_out(u'{}'.format(line), '', draw=draw)
         if row == max_rows:
             break
 

@@ -38,7 +38,7 @@ def tdiff_text(ts, absVal=True, max_precision=1):
     diff = tdiff(ts, absVal)
     for unit, suffix_plural, suffix in ((3600*24*30*365, 'år', 'år'), (3600*24*30, 'månader', 'månad'), (3600*24, 'dagar', 'dag'), (3600, 'timmar', 'timme'), (60, 'minuter', 'minut'), (1, 'sekunder', 'sekund')):
         if diff >= unit:
-            val = math.floor(diff / unit)
+            val = int(math.floor(diff / unit))
             if val != 1:
                 suffix = suffix_plural
             out.append('{} {}'.format(val, suffix))
