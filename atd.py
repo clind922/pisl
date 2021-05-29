@@ -81,7 +81,7 @@ def print_out(left_text='', right_text='', draw=None):
 def draw_atd(draw):
     global row
     global last_get_deps
-    if departures is None or time_diff(last_get_deps) > data_refresh_delay:
+    if atd_file_data is None or time_diff(last_get_deps) > data_refresh_delay:
         f = open("atd.txt", "r")
         atd_file_data = f.read()
         atd_file_data = atd_file_data.splitlines()
