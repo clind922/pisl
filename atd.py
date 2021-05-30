@@ -63,27 +63,14 @@ def button_setup():
     GPIO.setup(button_gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin to be an input pin and set initial value to be pulled low (off)
     GPIO.add_event_detect(button_gpio_pin,GPIO.RISING,callback=button_callback) # Setup event on pin rising edge
 
-def print_out(left_text='', draw=None):
+def print_out(text='', draw=None):
     global row
     if draw is None:
-        print('StdOut: ' + left_text)
+        print('StdOut: ' + text)
     else:
-
-        extra = None
-        l_len = len(left_text)
-    
-        if l_len >= max_chars:
-            left_text = left_text[:(max_chars - l_len - 1)]
-            extra = left_text[(max_chars - l_len):max_chars]
-
-        y = row * line_height
-        row += 1
-        draw.text((0, y), left_text, font=font, fill="white")
-        if extra is not None:
+        for start in range(0, len(text) + 1, max_chars):
             row += 1
-            y = row * line_height
-            draw.text((0, y), extra, font=font, fill="white")
-
+            draw.text((0,row * line_height), text[start:], font=font, fill="white")
 
 def draw_atd(draw):
     global row
