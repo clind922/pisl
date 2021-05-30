@@ -46,6 +46,8 @@ def tdiff_text(ts, absVal=True, max_precision=6):
             max_precision -= 1
             if max_precision == 0:
                 break
+    if len(out) > 1:
+        out[len(out) - 1] = ' och ' + out[len(out) - 1]
     return ', '.join(out)
 
 def is_active_hours(active_hours, limit):

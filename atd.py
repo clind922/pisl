@@ -70,7 +70,7 @@ def print_out(text='', draw=None):
     else:
         for start in range(0, len(text) + 1, max_chars):
             row += 1
-            draw.text((0,row * line_height), text[start:], font=font, fill="white")
+            draw.text((0,row * line_height), text[start:(start + max_chars)], font=font, fill="white")
 
 def draw_atd(draw):
     global row
