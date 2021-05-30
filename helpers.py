@@ -33,7 +33,7 @@ def tdiff(ts, absVal=True):
         diff = abs(diff)
     return int(diff)
 
-def tdiff_text(ts, absVal=True, max_precision=1):
+def tdiff_text(ts, absVal=True, max_precision=3):
     out = []
     diff = tdiff(ts, absVal)
     for unit, suffix_plural, suffix in ((3600*24*30*365, 'år', 'år'), (3600*24*30, 'månader', 'månad'), (3600*24, 'dagar', 'dag'), (3600, 'timmar', 'timme'), (60, 'minuter', 'minut'), (1, 'sekunder', 'sekund')):

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# encoding=utf8
 # -*- coding: utf-8 -*-
 #
 # Arbitrary text display
@@ -7,6 +8,7 @@
 import datetime
 import time
 import os
+import io
 import math
 import re
 
@@ -83,18 +85,18 @@ def draw_atd(draw):
     global last_get_deps
     global atd_file_data
     if atd_file_data is None or last_get_deps is None or time_diff(last_get_deps) > data_refresh_delay:
-        f = open("atd.txt", "r")
-        atd_file_data = f.read()
-        atd_file_data = atd_file_data.splitlines()
+        f = io.open("atd.txt", "r", encoding="utf-8")
+        atd_file_data = f.readlines()
         f.close()
     row = 0
+
     for line in atd_file_data:
-    	matches = re.findall("(!([a-z_]+)\((\d+)\))", line)
+        matches = re.findall("(!([a-z_]+)\((\d+)\))", line)
         for match in matches:
             ret = {}
             exec('val = {}({})'.format(match[1], match[2]), {'tdiff_text': tdiff_text}, ret)
-            line = line.replace(match[0], ret['val'])
-    	print_out(u'{}'.format(line), '', draw=draw)
+            line = uline.replace(match[0], ret['val'].decode("utf-8"))
+        print_out(line, '', draw=draw)
         if row == max_rows:
             break
 
