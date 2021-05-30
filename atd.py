@@ -63,22 +63,27 @@ def button_setup():
     GPIO.setup(button_gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin to be an input pin and set initial value to be pulled low (off)
     GPIO.add_event_detect(button_gpio_pin,GPIO.RISING,callback=button_callback) # Setup event on pin rising edge
 
-def print_out(left_text='', right_text='', draw=None):
+def print_out(left_text='', draw=None):
     global row
     if draw is None:
-        print('StdOut: ' + left_text + ' ' + right_text)
+        print('StdOut: ' + left_text)
     else:
 
+        extra = None
         l_len = len(left_text)
-        r_len = len(right_text)
-        if l_len + r_len >= max_chars:
-            left_text = left_text[:(max_chars - r_len - 1)]
-        else:
-            right_text = ' ' * (max_chars - l_len - r_len - 1) + right_text
+    
+        if l_len >= max_chars:
+            left_text = left_text[:(max_chars - l_len - 1)]
+            extra = left_text[(max_chars - l_len):max_chars]
 
         y = row * line_height
         row += 1
-        draw.text((0, y), left_text + ' ' + right_text, font=font, fill="white")
+        draw.text((0, y), left_text, font=font, fill="white")
+        if extra not None:
+            row += 1
+            y = row * line_height
+            draw.text((0, y), extra, font=font, fill="white")
+
 
 def draw_atd(draw):
     global row
@@ -95,8 +100,8 @@ def draw_atd(draw):
         for match in matches:
             ret = {}
             exec('val = {}({})'.format(match[1], match[2]), {'tdiff_text': tdiff_text}, ret)
-            line = uline.replace(match[0], ret['val'].decode("utf-8"))
-        print_out(line, '', draw=draw)
+            line = line.replace(match[0], ret['val'].decode("utf-8"))
+        print_out(line, draw=draw)
         if row == max_rows:
             break
 
