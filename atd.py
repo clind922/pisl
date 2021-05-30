@@ -79,7 +79,7 @@ def print_out(left_text='', draw=None):
         y = row * line_height
         row += 1
         draw.text((0, y), left_text, font=font, fill="white")
-        if extra not None:
+        if extra is not None:
             row += 1
             y = row * line_height
             draw.text((0, y), extra, font=font, fill="white")
