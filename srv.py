@@ -11,6 +11,8 @@ import re
 
 from helpers import make_font
 from helpers import time_diff
+from helpers import tdiff
+from helpers import tdiff_text
 from helpers import is_active_hours
 from helpers import ApiException
 from requests import ReadTimeout, ConnectTimeout, HTTPError, Timeout, ConnectionError
@@ -23,7 +25,7 @@ import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path='.env')
+load_dotenv(dotenv_path='.env', encoding='utf8')
 
 data_refresh_delay_normal = 3600*24 # Normal API frefresh fequency
 data_refresh_delay_fast = 3600*4 # A faster API refresh freqency
@@ -89,7 +91,6 @@ def get_srv_date(swe_date):
     #week_days.index(m.group('weekday')) + 1
     day = int(m.group('day'))
     month = months.index(m.group('month')) + 1
-    print(month)
     year = datetime.date.today().year
     # Probably next year if month is next year
     if month < datetime.date.today().month:
@@ -109,7 +110,6 @@ def get_services():
     json = resp.json()
     
     services = {}
-    print(json)
     now = time.mktime(time.localtime())
     
     for service in json['services']:
@@ -118,7 +118,8 @@ def get_services():
             ts = time.mktime(dt.timetuple())
             if ts >= now:
                 dfmt = '%-d/%-m'
-                next_text = u'{}: {} ({})'.format(service['serviceDescription'].replace('Sortera hemma, fyrfack k', 'K'), dt.strftime(dfmt.replace('%-', '%#') if os.name == 'nt' else dmft), tdiff_text(ts, True, 2, True) )
+                dfmt = dt.strftime(dfmt.replace('%-', '%#') if os.name == 'nt' else dfmt)
+                next_text = u'{} {}{} {}'.format(service['serviceDescription'].replace('Sortera hemma, fyrfack k', 'K'), dfmt, ' ' * (5 - len(dfmt)), tdiff_text(ts, True, 2, True))
                 services[ts] = next_text
     return services
 
@@ -147,11 +148,11 @@ def draw_srv(draw, data_refresh_delay):
     deviations_shown = []
     preferred_num_printed = 0
     
-    for key in sorted(services):
+    for key in sorted(srv_services):
         color = "white"
-        if tdiff(int(key), Fale) < 3600*24:
+        if tdiff(int(key), False) < 3600*24:
             color = "red"
-        print_out(services[key], draw=draw, color=color)
+        print_out(srv_services[key], draw=draw, color=color)
 
     # Reset row
     row = 0
