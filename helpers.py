@@ -26,6 +26,7 @@ def time_diff(dt, absVal=True):
     if absVal:
         diff = abs(diff)
     return int(diff)
+
 def tdiff(ts, absVal=True):
     now = time.mktime(time.localtime())
     diff = ts - now
@@ -33,22 +34,26 @@ def tdiff(ts, absVal=True):
         diff = abs(diff)
     return int(diff)
 
-def tdiff_text(ts, absVal=True, max_precision=6):
+def tdiff_text(ts, absVal=True, max_precision=6, short=False):
     out = []
     diff = tdiff(ts, absVal)
-    for unit, suffix_plural, suffix in ((3600*24*30*365, 'år', 'år'), (3600*24*30, 'månader', 'månad'), (3600*24, 'dagar', 'dag'), (3600, 'timmar', 'timme'), (60, 'minuter', 'minut'), (1, 'sekunder', 'sekund')):
+    for unit, suffix_plural, suffix, suffix_short in ((3600*24*30*365, 'år', 'år', 'å'), (3600*24*30, 'månader', 'månad', 'm'), (3600*24*7, 'veckor', 'vecka', 'v'), (3600*24, 'dagar', 'dag', 'd'), (3600, 'timmar', 'timme', 't'), (60, 'minuter', 'minut', 'm'), (1, 'sekunder', 'sekund', 's')):
         if diff >= unit:
             val = int(math.floor(diff / unit))
-            if val != 1:
-                suffix = suffix_plural
-            out.append('{} {}'.format(val, suffix))
+
+            if short:
+                suffix = suffix_short
+            else:
+                if val != 1:
+                    suffix = suffix_plural
+            out.append('{}{}{}'.format(val, '' if short else ' ',suffix))
             diff -= val * unit
             max_precision -= 1
             if max_precision == 0:
                 break
-    if len(out) > 1:
-        out[len(out) - 1] = ' och ' + out[len(out) - 1]
-    return ', '.join(out)
+    if len(out) > 1 and short is False:
+        out[len(out) - 1] = 'och ' + out[len(out) - 1]
+    return ', '.join(out).replace(', och', ' och')
 
 def is_active_hours(active_hours, limit):
     now = datetime.datetime.now()
