@@ -47,7 +47,7 @@ button_gpio_pin = 15
 last_get_services = None
 button_press_time = None
 srv_services = None
-screen_flash = False
+screen_flash = True
 
 SRV_STREETNAME = os.getenv("SRV_STREETNAME")
 SRV_ITEM = os.getenv("SRV_ITEM")
@@ -152,11 +152,18 @@ def draw_srv(draw, data_refresh_delay):
     
     for key in sorted(srv_services):
         text = srv_services[key]
-        if tdiff(int(key), False) < 3600*24:
+        if screen_flash and tdiff(int(key), False) < 3600*24 and time.mktime(time.localtime()) % (screen_data_refresh_delay_flash + 1) == 0:
+            clear_screen()
             time.sleep(screen_data_refresh_delay_flash)
         print_out(text, draw=draw)
 
     # Reset row
+    row = 0
+
+def clear_screen():
+    global row
+    for x in range(max_rows)
+        print_out('', draw=draw)
     row = 0
 
 def main():
