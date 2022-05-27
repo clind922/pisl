@@ -66,7 +66,7 @@ def button_setup():
     GPIO.setup(button_gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin to be an input pin and set initial value to be pulled low (off)
     GPIO.add_event_detect(button_gpio_pin,GPIO.RISING,callback=button_callback) # Setup event on pin rising edge
 
-def print_out(left_text='', right_text='', draw=None, color="white"):
+def print_out(left_text='', right_text='', draw=None):
     global row
     if draw is None:
         print('StdOut: ' + left_text + ' ' + right_text)
@@ -81,7 +81,7 @@ def print_out(left_text='', right_text='', draw=None, color="white"):
 
         y = row * line_height
         row += 1
-        draw.text((0, y), left_text + ' ' + right_text, font=font, fill=color)
+        draw.text((0, y), left_text + ' ' + right_text, font=font, fill="white")
 
 def get_srv_date(swe_date):
     week_days = ["måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag", "söndag"]
@@ -96,7 +96,7 @@ def get_srv_date(swe_date):
     if month < datetime.date.today().month:
         year = year + 1
 
-    return datetime.date(year, month, day)
+    return datetime.datetime(year, month, day, 9, 0, 0)
 
 def get_services():
     print('Making API call...')
@@ -119,7 +119,7 @@ def get_services():
             if ts >= now:
                 dfmt = '%-d/%-m'
                 dfmt = dt.strftime(dfmt.replace('%-', '%#') if os.name == 'nt' else dfmt)
-                next_text = u'{} {}{} {}'.format(service['serviceDescription'].replace('Sortera hemma, fyrfack k', 'K'), dfmt, ' ' * (5 - len(dfmt)), tdiff_text(ts, True, 2, True))
+                next_text = u'{} {}{} {}'.format(service['serviceDescription'].replace('Sortera hemma, fyrfack k', 'K'), dfmt, ' ' * (5 - len(dfmt)), tdiff_text(ts, True, 2, True).replace(' ', ''))
                 services[ts] = next_text
     return services
 
@@ -149,10 +149,10 @@ def draw_srv(draw, data_refresh_delay):
     preferred_num_printed = 0
     
     for key in sorted(srv_services):
-        color = "white"
+        text = (srv_services[key]
         if tdiff(int(key), False) < 3600*24:
-            color = "red"
-        print_out(srv_services[key], draw=draw, color=color)
+            text = text + "*"  
+        print_out(text, draw=draw)
 
     # Reset row
     row = 0
