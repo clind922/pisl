@@ -27,11 +27,12 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path='.env', encoding='utf8')
 
-data_refresh_delay_normal = 3600*24 # Normal API frefresh fequency
+data_refresh_delay_normal = 3600*12 # Normal API frefresh fequency
 data_refresh_delay_fast = 3600*4 # A faster API refresh freqency
 
 screen_data_refresh_delay = 5 # Redraw (cached) data every X seconds
-screen_active_time = 120 # How long the screen is active after button press (during off-hours)
+screen_data_refresh_delay_flash = 1
+screen_active_time = 120 # In seconds, how long the screen is active after button press (during off-hours)
 
 start_time = datetime.datetime.now()
 
@@ -46,6 +47,7 @@ button_gpio_pin = 15
 last_get_services = None
 button_press_time = None
 srv_services = None
+screen_flash = False
 
 SRV_STREETNAME = os.getenv("SRV_STREETNAME")
 SRV_ITEM = os.getenv("SRV_ITEM")
@@ -71,7 +73,6 @@ def print_out(left_text='', right_text='', draw=None):
     if draw is None:
         print('StdOut: ' + left_text + ' ' + right_text)
     else:
-
         l_len = len(left_text)
         r_len = len(right_text)
         if l_len + r_len >= max_chars:
@@ -127,6 +128,7 @@ def draw_srv(draw, data_refresh_delay):
     global row
     global last_get_services
     global srv_services
+    global screen_flash
     if srv_services is None or time_diff(last_get_services) > data_refresh_delay:
         try:
             srv_services = get_services()
@@ -149,9 +151,9 @@ def draw_srv(draw, data_refresh_delay):
     preferred_num_printed = 0
     
     for key in sorted(srv_services):
-        text = (srv_services[key]
+        text = srv_services[key]
         if tdiff(int(key), False) < 3600*24:
-            text = text + "*"  
+            time.sleep(screen_data_refresh_delay_flash)
         print_out(text, draw=draw)
 
     # Reset row
