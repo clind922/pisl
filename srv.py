@@ -48,6 +48,7 @@ last_get_services = None
 button_press_time = None
 srv_services = None
 screen_flash = True
+screen_flash_test = False
 
 SRV_STREETNAME = os.getenv("SRV_STREETNAME")
 SRV_ITEM = os.getenv("SRV_ITEM")
@@ -145,21 +146,16 @@ def draw_srv(draw, data_refresh_delay):
             time.sleep(30 * 10) # 5m
             return
         last_get_services = datetime.datetime.now()
-    
-    print_buffer = {}
-    deviations_shown = []
-    preferred_num_printed = 0
 
     for key in sorted(srv_services):
-        if screen_flash and tdiff(int(key), False) < 3600*24:
-            clear_screen(draw)
+        if screen_flash and tdiff(int(key), False) < 3600*24 or screen_flash_test:
             time.sleep(screen_data_refresh_delay_flash)
             screen_flash = False
             return
         break
 
     for key in sorted(srv_services):
-        if(row <= max_rows):
+        if(row < max_rows):
             print_out(srv_services[key], draw=draw)
 
     screen_flash = True
