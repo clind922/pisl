@@ -148,7 +148,7 @@ def draw_srv(draw, data_refresh_delay):
         last_get_services = datetime.datetime.now()
 
     for key in sorted(srv_services):
-        if screen_flash and tdiff(int(key), False) < 3600*24 or screen_flash_test:
+        if screen_flash and (tdiff(int(key), False) < 3600*24 or screen_flash_test):
             time.sleep(screen_data_refresh_delay_flash)
             screen_flash = False
             return
