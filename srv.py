@@ -30,7 +30,7 @@ load_dotenv(dotenv_path='.env', encoding='utf8')
 data_refresh_delay_normal = 3600*12 # Normal API frefresh fequency
 data_refresh_delay_fast = 3600*4 # A faster API refresh freqency
 
-screen_data_refresh_delay = 5 # Redraw (cached) data every X seconds
+screen_data_refresh_delay = 1 # Redraw (cached) data every X seconds
 screen_data_refresh_delay_flash = 1
 screen_active_time = 120 # In seconds, how long the screen is active after button press (during off-hours)
 
@@ -143,27 +143,27 @@ def draw_srv(draw, data_refresh_delay):
         except ValueError as e: # Can be internet connection failure
             print_out (str(e), '', draw=draw)
             time.sleep(30 * 10) # 5m
-            return 
+            return
         last_get_services = datetime.datetime.now()
     
     print_buffer = {}
     deviations_shown = []
     preferred_num_printed = 0
-    
+
     for key in sorted(srv_services):
-        text = srv_services[key]
-        if screen_flash and tdiff(int(key), False) < 3600*24 and time.mktime(time.localtime()) % (screen_data_refresh_delay_flash + 1) == 0:
-            clear_screen()
+        if screen_flash and tdiff(int(key), False) < 3600*24:
+            clear_screen(draw)
             time.sleep(screen_data_refresh_delay_flash)
-        print_out(text, draw=draw)
+            screen_flash = False
+            return
+        break
 
+    for key in sorted(srv_services):
+        if(row <= max_rows)
+            print_out(srv_services[key], draw=draw)
+
+    screen_flash = True
     # Reset row
-    row = 0
-
-def clear_screen():
-    global row
-    for x in range(max_rows)
-        print_out('', draw=draw)
     row = 0
 
 def main():
