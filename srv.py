@@ -159,7 +159,7 @@ def draw_srv(draw, data_refresh_delay):
         break
 
     for key in sorted(srv_services):
-        if(row <= max_rows)
+        if(row <= max_rows):
             print_out(srv_services[key], draw=draw)
 
     screen_flash = True
