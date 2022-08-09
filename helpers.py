@@ -46,7 +46,7 @@ def tdiff_text(ts, absVal=True, max_precision=6, short=False):
             else:
                 if val != 1:
                     suffix = suffix_plural
-            out.append('{}{}{}'.format(val, '' if short else ' ',suffix))
+            out.append('{}{}{}'.format(val, '' if short else ' ', suffix))
             diff -= val * unit
             max_precision -= 1
             if max_precision == 0:
@@ -61,6 +61,14 @@ def is_active_hours(active_hours, limit):
     next_d = cron.get_next(datetime.datetime)
     diff = time_diff(next_d)
     return diff < 120
+
+
+def print_log(string='')
+    content = '[{}] {}'.format(datetime.datetime.today().strftime('%Y-%m-%d %H:%I:%s'), string)
+    print(content)
+    with  open("logs/{}.txt".format(datetime.datetime.today().strftime('%Y-%m-%d')), "a") as file:
+        file.write(content)
+        file.close()
 
 class ApiException(Exception):
 	pass
