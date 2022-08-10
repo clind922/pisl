@@ -62,8 +62,7 @@ def is_active_hours(active_hours, limit):
     diff = time_diff(next_d)
     return diff < 120
 
-
-def print_log(string='')
+def print_log(string=''):
     content = '[{}] {}'.format(datetime.datetime.today().strftime('%Y-%m-%d %H:%I:%s'), string)
     print(content)
     with  open("logs/{}.txt".format(datetime.datetime.today().strftime('%Y-%m-%d')), "a") as file:
