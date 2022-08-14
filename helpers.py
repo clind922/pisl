@@ -63,10 +63,10 @@ def is_active_hours(active_hours, limit):
     return diff < 120
 
 def print_log(string=''):
-    content = '[{}] {}'.format(datetime.datetime.today().strftime('%Y-%m-%d %H:%I:%s'), string)
+    content = '[{}] {}'.format(datetime.datetime.today().strftime('%Y-%m-%d %H:%I:%S'), string)
     print(content)
     with  open("logs/{}.txt".format(datetime.datetime.today().strftime('%Y-%m-%d')), "a") as file:
-        file.write(content)
+        file.write(content + '\n')
         file.close()
 
 class ApiException(Exception):
