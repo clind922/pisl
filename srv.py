@@ -104,7 +104,7 @@ def get_srv_date(swe_date):
 def get_services():
     print_log('Making API call...')
     
-    headers = {'X-Requested-With': 'XMLHttpRequest'}
+    headers = {'Referer': 'https://www.srvatervinning.se/sophamtning/privat/hamtinformation-och-driftstorningar', 'X-Requested-With': 'XMLHttpRequest'}
     url = "https://www.srvatervinning.se/sophamtning/privat/hamtinformation-och-driftstorningar?sv.target=12.d9ec095172e6db9637d4bf6&sv.12.d9ec095172e6db9637d4bf6.route=/item&item=%s&svAjaxReqParam=ajax&streetname=%s" % (SRV_ITEM, SRV_STREETNAME)
     resp = requests.get(url, headers=headers)
 
@@ -142,12 +142,12 @@ def draw_srv(draw, data_refresh_delay):
         except (ConnectionError, ConnectTimeout, HTTPError, ReadTimeout, Timeout) as e:
             print_out (str(e), '', draw=draw)
             print_log(str(e))
-            time.sleep(30)
+            time.sleep(60 * 5)
             return
         except ValueError as e: # Can be internet connection failure
             print_out (str(e), '', draw=draw)
             print_log(str(e))
-            time.sleep(30 * 10) # 5m
+            time.sleep(60 * 5) # 5m
             return
         last_get_services = datetime.datetime.now()
 
