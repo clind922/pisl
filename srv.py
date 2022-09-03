@@ -142,7 +142,7 @@ def draw_srv(draw, data_refresh_delay):
         except (ConnectionError, ConnectTimeout, HTTPError, ReadTimeout, Timeout) as e:
             print_out (str(e), '', draw=draw)
             print_log(str(e))
-            time.sleep(60 * 5)
+            time.sleep(60 * 5) # 5m
             return
         except ValueError as e: # Can be internet connection failure
             print_out (str(e), '', draw=draw)
@@ -150,6 +150,10 @@ def draw_srv(draw, data_refresh_delay):
             time.sleep(60 * 5) # 5m
             return
         last_get_services = datetime.datetime.now()
+        if len(srv_services) == 0:
+            print_log('Empty result')
+            time.sleep(60 * 5) # 5m
+            return
 
     for key in sorted(srv_services):
         if screen_flash and (tdiff(int(key), False) < 3600*24 or screen_flash_test):
