@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/-usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 
@@ -8,6 +8,7 @@ import time
 import os
 import math
 import re
+import sys, traceback
 
 from helpers import make_font
 from helpers import time_diff
@@ -17,6 +18,7 @@ from helpers import is_active_hours
 from helpers import print_log
 from helpers import ApiException
 from requests import ReadTimeout, ConnectTimeout, HTTPError, Timeout, ConnectionError
+from urllib3.exceptions import NewConnectionError
 
 from oled_options import get_device
 from luma.core.render import canvas
@@ -135,17 +137,23 @@ def draw_srv(draw, data_refresh_delay):
         try:
             srv_services = get_services()
         except ApiException as e:
-            print_out (str(e), '', draw=draw)
+            print_out(str(e), '', draw=draw)
+            print_log('E1')
             print_log(str(e))
             time.sleep(30)
             return
-        except (ConnectionError, ConnectTimeout, HTTPError, ReadTimeout, Timeout) as e:
-            print_out (str(e), '', draw=draw)
+        except (ConnectionError, ConnectTimeout, HTTPError, ReadTimeout, Timeout, NewConnectionError) as e:
+            print_out(str(e), '', draw=draw)
+            print_log('E2')
             print_log(str(e))
+            print_log('-'*60)
+            traceback.print_exc(file=sys.stdout)
+            print_log('-'*60)
             time.sleep(60 * 5) # 5m
             return
         except ValueError as e: # Can be internet connection failure
-            print_out (str(e), '', draw=draw)
+            print_out(str(e), '', draw=draw)
+            print_log('E3')
             print_log(str(e))
             time.sleep(60 * 5) # 5m
             return
