@@ -147,7 +147,7 @@ def draw_srv(draw, data_refresh_delay):
             print_log('E2')
             print_log(str(e))
             print_log('-'*60)
-            traceback.print_exc(file=sys.stdout)
+            print_log(traceback.format_exc())
             print_log('-'*60)
             time.sleep(60 * 5) # 5m
             return
