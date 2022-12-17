@@ -52,9 +52,10 @@ button_press_time = None
 srv_services = None
 screen_flash = True
 screen_flash_test = False
+debug_count = 0
 
 SRV_STREETNAME = os.getenv("SRV_STREETNAME")
-SRV_ITEM = os.getenv("SRV_ITEM")
+SRV_CITY = os.getenv("SRV_CITY")
 
 ACTIVE_HOURS = os.getenv("ACTIVE_HOURS")
 
@@ -88,27 +89,20 @@ def print_out(left_text='', right_text='', draw=None):
         row += 1
         draw.text((0, y), left_text + ' ' + right_text, font=font, fill="white")
 
-def get_srv_date(swe_date):
-    week_days = ["måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag", "söndag"]
-    months = ["januari", "februari", "mars", "april", "maj", "juni", "juli", "augusti", "september", "oktober", "november", "december"]
-    p = re.compile(r'(?P<weekday>.+) (?P<day>\d+) (?P<month>.+)')
-    m = p.search(swe_date);
-    #week_days.index(m.group('weekday')) + 1
+def get_srv_date(iso_date):
+    p = re.compile(r'(?P<year>.+)-(?P<month>\d+)-(?P<day>.+)')
+    m = p.search(iso_date);
     day = int(m.group('day'))
-    month = months.index(m.group('month')) + 1
-    year = datetime.date.today().year
-    # Probably next year if month is next year
-    if month < datetime.date.today().month:
-        year = year + 1
-
+    month = int(m.group('month'))
+    year = int(m.group('year'))
+   
     return datetime.datetime(year, month, day, 9, 0, 0)
 
 def get_services():
-    print_log('Making API call...')
+    print('Making API call...')
     
-    headers = {'Referer': 'https://www.srvatervinning.se/sophamtning/privat/hamtinformation-och-driftstorningar', 'X-Requested-With': 'XMLHttpRequest'}
-    url = "https://www.srvatervinning.se/sophamtning/privat/hamtinformation-och-driftstorningar?sv.target=12.d9ec095172e6db9637d4bf6&sv.12.d9ec095172e6db9637d4bf6.route=/item&item=%s&svAjaxReqParam=ajax&streetname=%s" % (SRV_ITEM, SRV_STREETNAME)
-    resp = requests.get(url, headers=headers)
+    url = "https://www.srvatervinning.se/rest-api/srv-slamsok-rest-new/search?query=%s&city=%s" % (SRV_STREETNAME, SRV_CITY)
+    resp = requests.get(url)
 
     if resp.status_code != 200:
         raise ApiException('HTTP return code is not 200: {}'.format(resp.status_code))
@@ -117,15 +111,17 @@ def get_services():
     services = {}
     now = time.mktime(time.localtime())
     
-    for service in json['services']:
-        for date in service['cycleDates']:
-            dt = get_srv_date(date['Date'])
-            ts = time.mktime(dt.timetuple())
-            if ts >= now:
-                dfmt = '%-d/%-m'
-                dfmt = dt.strftime(dfmt.replace('%-', '%#') if os.name == 'nt' else dfmt)
-                next_text = u'{} {}{} {}'.format(service['serviceDescription'].replace('Sortera hemma, fyrfack k', 'K'), dfmt, ' ' * (5 - len(dfmt)), tdiff_text(ts, True, 2, True).replace(' ', ''))
-                services[ts] = next_text
+    for result in json['results']:
+
+        for container in result['containers']:
+            for date in container['calendars']:
+                dt = get_srv_date(date['startDate'])
+                ts = time.mktime(dt.timetuple())
+                if ts >= now:
+                    dfmt = '%-d/%-m'
+                    dfmt = dt.strftime(dfmt.replace('%-', '%#') if os.name == 'nt' else dfmt)
+                    next_text = u'{} {}{} {}'.format(container['containerType'].replace("Kärl 370 liter fyrfack kärl", 'K'), dfmt, ' ' * (5 - len(dfmt)), tdiff_text(ts, True, 2, True).replace(' ', ''))
+                    services[ts] = next_text
     return services
 
 def draw_srv(draw, data_refresh_delay):
@@ -133,6 +129,7 @@ def draw_srv(draw, data_refresh_delay):
     global last_get_services
     global srv_services
     global screen_flash
+    global debug_count
     if srv_services is None or time_diff(last_get_services) > data_refresh_delay:
         try:
             srv_services = get_services()
@@ -149,7 +146,12 @@ def draw_srv(draw, data_refresh_delay):
             print_log('-'*60)
             print_log(traceback.format_exc())
             print_log('-'*60)
-            time.sleep(60 * 5) # 5m
+            time.sleep(300) # 5m
+            print_log('-DEBUG-')
+            time.sleep(100)
+            print_log('-DEBUG_2-')
+            debug_count = debug_count + 1  
+            print_log(debug_count)
             return
         except ValueError as e: # Can be internet connection failure
             print_out(str(e), '', draw=draw)
