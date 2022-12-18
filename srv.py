@@ -99,7 +99,7 @@ def get_srv_date(iso_date):
     return datetime.datetime(year, month, day, 9, 0, 0)
 
 def get_services():
-    print('Making API call...')
+    print_log('Making API call...')
     
     url = "https://www.srvatervinning.se/rest-api/srv-slamsok-rest-new/search?query=%s&city=%s" % (SRV_STREETNAME, SRV_CITY)
     resp = requests.get(url)
@@ -120,7 +120,7 @@ def get_services():
                 if ts >= now:
                     dfmt = '%-d/%-m'
                     dfmt = dt.strftime(dfmt.replace('%-', '%#') if os.name == 'nt' else dfmt)
-                    next_text = u'{} {}{} {}'.format(container['containerType'].replace("Kärl 370 liter fyrfack kärl", 'K'), dfmt, ' ' * (5 - len(dfmt)), tdiff_text(ts, True, 2, True).replace(' ', ''))
+                    next_text = u'{} {}{} {}'.format(container['containerType'].replace(u'Kärl 370 liter fyrfack kärl', 'K'), dfmt, ' ' * (5 - len(dfmt)), tdiff_text(ts, True, 2, True).replace(' ', ''))
                     services[ts] = next_text
     return services
 
