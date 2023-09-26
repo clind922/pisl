@@ -101,7 +101,7 @@ def get_srv_date(iso_date):
 def get_services():
     print_log('Making API call...')
     
-    url = "https://www.srvatervinning.se/rest-api/srv-slamsok-rest-new/search?query=%s&city=%s" % (SRV_STREETNAME, SRV_CITY)
+    url = "https://www.srvatervinning.se/rest-api/core/sewagePickup/search?query=%s&city=%s" % (SRV_STREETNAME, SRV_CITY)
     resp = requests.get(url)
 
     if resp.status_code != 200:
