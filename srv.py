@@ -120,7 +120,7 @@ def get_services():
                 if ts >= now:
                     dfmt = '%-d/%-m'
                     dfmt = dt.strftime(dfmt.replace('%-', '%#') if os.name == 'nt' else dfmt)
-                    next_text = u'{} {}{} {}'.format(container['containerType'].replace(u'Kärl 370 liter kärl', 'K').replace(u' restavfall', '').replace(u' färgsortering'), dfmt, ' ' * (5 - len(dfmt)), tdiff_text(ts, True, 2, True).replace(' ', ''))
+                    next_text = u'{} {}{} {}'.format(container['containerType'].replace(u'Kärl 370 liter kärl', 'K').replace(u' restavfall', '').replace(u' färgsortering', ''), dfmt, ' ' * (5 - len(dfmt)), tdiff_text(ts, True, 2, True).replace(' ', ''))
                     services[ts] = next_text
     return services
 
